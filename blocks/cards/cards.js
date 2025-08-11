@@ -22,7 +22,6 @@ export default function decorate(block) {
     button.addEventListener('click', function(e) {
       // Prevent default navigation for testing purposes
       e.preventDefault();
-      
       // Generate different types of errors for testing JS Error Agent
       const errorTypes = [
         () => { throw new Error('Cards button error: Something went wrong!'); },

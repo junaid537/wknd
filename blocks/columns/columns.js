@@ -2,6 +2,7 @@ export default function decorate(block) {
   const cols = [...block.firstElementChild.children];
   block.classList.add(`columns-${cols.length}-cols`);
   
+  
   // Add error-triggering functionality to buttons within columns (including recent-articles)
   const buttons = block.querySelectorAll('a.button.primary, a.button.secondary');
   buttons.forEach((button, index) => {

@@ -421,35 +421,51 @@ export default async function decorate(block) {
     Object.entries(config).forEach(([key, value]) => { if (value) form.dataset[key] = value; });
     
     // Add realistic form interaction errors for JS Error Agent testing
-    addFormErrorSimulation(form);
+    // Use setTimeout to ensure form is fully rendered
+    setTimeout(() => {
+      addFormErrorSimulation(form);
+      console.log('✅ Form error simulation added successfully!');
+    }, 100);
   }
 }
 
 function addFormErrorSimulation(form) {
+  console.log('🔧 Setting up form error simulation...');
+  
   // Simulate errors during form field interactions
   const inputs = form.querySelectorAll('input, textarea, select');
+  console.log(`📝 Found ${inputs.length} form inputs to add error listeners to`);
+  
   inputs.forEach((input, index) => {
+    console.log(`🔗 Adding error listeners to input ${index}: ${input.name || input.type}`);
+    
     // Add focus error simulation - triggers every time
     input.addEventListener('focus', () => {
+      console.log(`🎯 Focus event triggered on: ${input.name || input.type}`);
       simulateFieldError(input, 'focus');
     });
     
     // Add input error simulation - triggers every time
     input.addEventListener('input', () => {
+      console.log(`⌨️ Input event triggered on: ${input.name || input.type}`);
       simulateFieldError(input, 'input');
     });
     
     // Add validation error simulation - triggers every time
     input.addEventListener('blur', () => {
+      console.log(`👋 Blur event triggered on: ${input.name || input.type}`);
       simulateFieldError(input, 'validation');
     });
   });
   
   // Override the submit handler to add error simulation - triggers every time
   form.addEventListener('submit', (e) => {
+    console.log('📤 Submit event triggered');
     e.preventDefault();
     simulateSubmitError(form);
   });
+  
+  console.log('✅ Form error simulation setup complete!');
 }
 
 function simulateFieldError(input, errorType) {

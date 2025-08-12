@@ -429,35 +429,26 @@ function addFormErrorSimulation(form) {
   // Simulate errors during form field interactions
   const inputs = form.querySelectorAll('input, textarea, select');
   inputs.forEach((input, index) => {
-    // Add focus/blur error simulation
+    // Add focus error simulation - triggers every time
     input.addEventListener('focus', () => {
-      if (Math.random() < 0.3) { // 30% chance of error on focus
-        simulateFieldError(input, 'focus');
-      }
+      simulateFieldError(input, 'focus');
     });
     
-    // Add input error simulation
+    // Add input error simulation - triggers every time
     input.addEventListener('input', () => {
-      if (Math.random() < 0.2) { // 20% chance of error during typing
-        simulateFieldError(input, 'input');
-      }
+      simulateFieldError(input, 'input');
     });
     
-    // Add validation error simulation
+    // Add validation error simulation - triggers every time
     input.addEventListener('blur', () => {
-      if (Math.random() < 0.25) { // 25% chance of validation error
-        simulateFieldError(input, 'validation');
-      }
+      simulateFieldError(input, 'validation');
     });
   });
   
-  // Override the submit handler to add error simulation
-  const originalSubmitHandler = form.onsubmit;
+  // Override the submit handler to add error simulation - triggers every time
   form.addEventListener('submit', (e) => {
-    if (Math.random() < 0.4) { // 40% chance of submit error
-      e.preventDefault();
-      simulateSubmitError(form);
-    }
+    e.preventDefault();
+    simulateSubmitError(form);
   });
 }
 
@@ -465,117 +456,156 @@ function simulateFieldError(input, errorType) {
   const errorScenarios = {
     focus: [
       () => {
-        // Simulate undefined validation function
-        const validator = window.formValidator;
-        validator.validateField(input.value);
+        // 1. DOM Lookup / Field Access Error
+        const nonExistentField = document.getElementById('non-existent-field');
+        nonExistentField.value = 'test'; // TypeError: Cannot read property 'value' of null
       },
       () => {
-        // Simulate DOM manipulation error
-        const errorElement = document.getElementById('field-error');
-        errorElement.innerHTML = 'Validation error';
+        // 2. Variable Reference Error
+        formData = input.value; // ReferenceError: formData is not defined
       },
       () => {
-        // Simulate API call error
-        const apiResponse = undefined;
-        apiResponse.data.fieldValidation(input.name);
+        // 3. Form Name Mismatch Error
+        const form = document.forms.myForm; // TypeError: Cannot read property 'myForm' of undefined
+        form.submit();
       }
     ],
     input: [
       () => {
-        // Simulate character limit validation error
-        const maxLength = input.getAttribute('maxlength');
-        if (maxLength && input.value.length > parseInt(maxLength)) {
-          const validationResult = undefined;
-          validationResult.showError();
+        // 4. Validation Logic Failure - input.match is not a function
+        const value = input.value;
+        if (value && typeof value !== 'string') {
+          value.match(/^[a-zA-Z]+$/); // TypeError: value.match is not a function
         }
       },
       () => {
-        // Simulate format validation error
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (input.type === 'email' && !emailRegex.test(input.value)) {
-          const emailValidator = undefined;
-          emailValidator.validate(input.value);
+        // 5. RangeError: Maximum call stack size exceeded (simulated)
+        let counter = 0;
+        function recursiveValidation() {
+          counter++;
+          if (counter > 1000) {
+            throw new RangeError('Maximum call stack size exceeded');
+          }
+          recursiveValidation();
         }
+        recursiveValidation();
       },
       () => {
-        // Simulate real-time validation error
-        const validationService = window.validationService;
-        validationService.checkField(input.name, input.value);
+        // 6. Custom validator throws error
+        if (input.type === 'email' && input.value) {
+          throw new Error('Invalid email format');
+        }
       }
     ],
     validation: [
       () => {
-        // Simulate required field validation error
-        if (input.hasAttribute('required') && !input.value.trim()) {
-          const requiredValidator = undefined;
-          requiredValidator.showRequiredError(input);
-        }
+        // 7. Event Handler Problem - onSubmitHandler is not a function
+        const submitHandler = window.onSubmitHandler;
+        submitHandler(); // TypeError: onSubmitHandler is not a function
       },
       () => {
-        // Simulate format validation error
-        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-        if (input.type === 'tel' && input.value && !phoneRegex.test(input.value)) {
-          const phoneValidator = undefined;
-          phoneValidator.validatePhone(input.value);
-        }
+        // 8. Event object error
+        const event = undefined;
+        event.target.value; // TypeError: Cannot read property 'target' of undefined
       },
       () => {
-        // Simulate server-side validation error
-        const serverValidator = undefined;
-        serverValidator.validateFieldOnServer(input.name, input.value);
+        // 9. Library/Dependency Error - jQuery validation not loaded
+        if (typeof $ !== 'undefined') {
+          $(input).validate(); // TypeError: $(...).validate is not a function
+        } else {
+          // Simulate jQuery not loaded
+          const jqueryValidator = window.jQuery;
+          jqueryValidator.validate(); // ReferenceError: jQuery is not defined
+        }
       }
     ]
   };
   
   const scenarios = errorScenarios[errorType];
-  if (scenarios && Math.random() < 0.7) { // 70% chance of error within the error type
-    const randomScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
-    console.error(`⚠️ Form field error during ${errorType}: ${input.name || input.type}`);
-    randomScenario();
+  if (scenarios) {
+    // Cycle through errors sequentially for predictable testing
+    const errorIndex = (input.dataset.errorCount || 0) % scenarios.length;
+    input.dataset.errorCount = (parseInt(input.dataset.errorCount || 0) + 1);
+    
+    console.error(`🚨 Form field error during ${errorType}: ${input.name || input.type}`);
+    scenarios[errorIndex]();
   }
 }
 
 function simulateSubmitError(form) {
   const submitErrorScenarios = [
     () => {
-      // Simulate network timeout during form submission
-      const submitPromise = new Promise((resolve) => setTimeout(resolve, 100));
-      submitPromise.then(() => {
-        const response = undefined;
-        response.data.submissionStatus();
-      });
+      // 10. Async/API Submission Failure - Failed to fetch
+      fetch('/api/non-existent-endpoint')
+        .then(response => response.json())
+        .catch(error => {
+          throw new TypeError('Failed to fetch');
+        });
     },
     () => {
-      // Simulate validation error during submission
-      const formData = new FormData(form);
-      const validator = undefined;
-      validator.validateForm(formData);
+      // 11. JSON Parsing Error - Unexpected token in JSON
+      const invalidJson = '<html>Server Error</html>';
+      JSON.parse(invalidJson); // SyntaxError: Unexpected token < in JSON at position 0
     },
     () => {
-      // Simulate server error during submission
-      const serverResponse = undefined;
-      serverResponse.processSubmission(form);
-    },
-    () => {
-      // Simulate reCAPTCHA error
-      const recaptchaResponse = document.getElementById('googleRecaptcha');
-      if (recaptchaResponse) {
-        const recaptchaValidator = undefined;
-        recaptchaValidator.verify(recaptchaResponse.value);
+      // 12. Server Error Status Code
+      const mockResponse = { status: 500 };
+      if (mockResponse.status >= 400) {
+        throw new Error('Request failed with status code 500');
       }
     },
     () => {
-      // Simulate file upload error
+      // 13. reCAPTCHA Library Error
+      if (typeof grecaptcha === 'undefined') {
+        throw new ReferenceError('grecaptcha is not defined');
+      } else {
+        grecaptcha.verify('invalid-token');
+      }
+    },
+    () => {
+      // 14. File Upload Processing Error
       const fileInput = form.querySelector('input[type="file"]');
       if (fileInput && fileInput.files.length > 0) {
-        const fileProcessor = undefined;
-        fileProcessor.processFile(fileInput.files[0]);
+        const file = fileInput.files[0];
+        const fileSize = file.size;
+        if (fileSize > 10 * 1024 * 1024) { // 10MB limit
+          throw new RangeError('File size exceeds maximum limit');
+        }
       }
     },
     () => {
-      // Simulate database connection error
-      const dbConnection = undefined;
-      dbConnection.saveUserData(form);
+      // 15. Data Encoding Error - URI malformed
+      const formData = new FormData(form);
+      const encodedData = encodeURIComponent(formData.get('firstName') || '');
+      decodeURIComponent(encodedData + '%E0%A4'); // URIError: URI malformed
+    },
+    () => {
+      // 16. Object Conversion Error
+      const formData = new FormData(form);
+      const dataObject = Object.keys(formData); // TypeError: Cannot convert undefined or null to object
+    },
+    () => {
+      // 17. Date Parsing Error
+      const dateInput = form.querySelector('input[type="date"]');
+      if (dateInput && dateInput.value) {
+        const invalidDate = new Date('invalid-date-string');
+        invalidDate.toISOString(); // RangeError: Invalid time value
+      }
+    },
+    () => {
+      // 18. Framework Component Error
+      const vueComponent = window.VueComponent;
+      if (vueComponent) {
+        vueComponent.submitForm(); // TypeError: VueComponent.submitForm is not a function
+      }
+    },
+    () => {
+      // 19. Event Listener Configuration Error
+      const submitButton = form.querySelector('button[type="submit"]');
+      submitButton.addEventListener('click', (e) => {
+        e.preventDefault(); // This will work, but let's simulate a passive listener error
+        throw new Error('Event listener configuration error');
+      }, { passive: true });
     }
   ];
   

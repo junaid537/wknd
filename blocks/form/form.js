@@ -419,5 +419,167 @@ export default async function decorate(block) {
 
     const config = readBlockConfig(block);
     Object.entries(config).forEach(([key, value]) => { if (value) form.dataset[key] = value; });
+    
+    // Add realistic form interaction errors for JS Error Agent testing
+    addFormErrorSimulation(form);
   }
+}
+
+function addFormErrorSimulation(form) {
+  // Simulate errors during form field interactions
+  const inputs = form.querySelectorAll('input, textarea, select');
+  inputs.forEach((input, index) => {
+    // Add focus/blur error simulation
+    input.addEventListener('focus', () => {
+      if (Math.random() < 0.3) { // 30% chance of error on focus
+        simulateFieldError(input, 'focus');
+      }
+    });
+    
+    // Add input error simulation
+    input.addEventListener('input', () => {
+      if (Math.random() < 0.2) { // 20% chance of error during typing
+        simulateFieldError(input, 'input');
+      }
+    });
+    
+    // Add validation error simulation
+    input.addEventListener('blur', () => {
+      if (Math.random() < 0.25) { // 25% chance of validation error
+        simulateFieldError(input, 'validation');
+      }
+    });
+  });
+  
+  // Override the submit handler to add error simulation
+  const originalSubmitHandler = form.onsubmit;
+  form.addEventListener('submit', (e) => {
+    if (Math.random() < 0.4) { // 40% chance of submit error
+      e.preventDefault();
+      simulateSubmitError(form);
+    }
+  });
+}
+
+function simulateFieldError(input, errorType) {
+  const errorScenarios = {
+    focus: [
+      () => {
+        // Simulate undefined validation function
+        const validator = window.formValidator;
+        validator.validateField(input.value);
+      },
+      () => {
+        // Simulate DOM manipulation error
+        const errorElement = document.getElementById('field-error');
+        errorElement.innerHTML = 'Validation error';
+      },
+      () => {
+        // Simulate API call error
+        const apiResponse = undefined;
+        apiResponse.data.fieldValidation(input.name);
+      }
+    ],
+    input: [
+      () => {
+        // Simulate character limit validation error
+        const maxLength = input.getAttribute('maxlength');
+        if (maxLength && input.value.length > parseInt(maxLength)) {
+          const validationResult = undefined;
+          validationResult.showError();
+        }
+      },
+      () => {
+        // Simulate format validation error
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (input.type === 'email' && !emailRegex.test(input.value)) {
+          const emailValidator = undefined;
+          emailValidator.validate(input.value);
+        }
+      },
+      () => {
+        // Simulate real-time validation error
+        const validationService = window.validationService;
+        validationService.checkField(input.name, input.value);
+      }
+    ],
+    validation: [
+      () => {
+        // Simulate required field validation error
+        if (input.hasAttribute('required') && !input.value.trim()) {
+          const requiredValidator = undefined;
+          requiredValidator.showRequiredError(input);
+        }
+      },
+      () => {
+        // Simulate format validation error
+        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+        if (input.type === 'tel' && input.value && !phoneRegex.test(input.value)) {
+          const phoneValidator = undefined;
+          phoneValidator.validatePhone(input.value);
+        }
+      },
+      () => {
+        // Simulate server-side validation error
+        const serverValidator = undefined;
+        serverValidator.validateFieldOnServer(input.name, input.value);
+      }
+    ]
+  };
+  
+  const scenarios = errorScenarios[errorType];
+  if (scenarios && Math.random() < 0.7) { // 70% chance of error within the error type
+    const randomScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+    console.error(`⚠️ Form field error during ${errorType}: ${input.name || input.type}`);
+    randomScenario();
+  }
+}
+
+function simulateSubmitError(form) {
+  const submitErrorScenarios = [
+    () => {
+      // Simulate network timeout during form submission
+      const submitPromise = new Promise((resolve) => setTimeout(resolve, 100));
+      submitPromise.then(() => {
+        const response = undefined;
+        response.data.submissionStatus();
+      });
+    },
+    () => {
+      // Simulate validation error during submission
+      const formData = new FormData(form);
+      const validator = undefined;
+      validator.validateForm(formData);
+    },
+    () => {
+      // Simulate server error during submission
+      const serverResponse = undefined;
+      serverResponse.processSubmission(form);
+    },
+    () => {
+      // Simulate reCAPTCHA error
+      const recaptchaResponse = document.getElementById('googleRecaptcha');
+      if (recaptchaResponse) {
+        const recaptchaValidator = undefined;
+        recaptchaValidator.verify(recaptchaResponse.value);
+      }
+    },
+    () => {
+      // Simulate file upload error
+      const fileInput = form.querySelector('input[type="file"]');
+      if (fileInput && fileInput.files.length > 0) {
+        const fileProcessor = undefined;
+        fileProcessor.processFile(fileInput.files[0]);
+      }
+    },
+    () => {
+      // Simulate database connection error
+      const dbConnection = undefined;
+      dbConnection.saveUserData(form);
+    }
+  ];
+  
+  const randomSubmitError = submitErrorScenarios[Math.floor(Math.random() * submitErrorScenarios.length)];
+  console.error('🚨 Form submission error occurred - user abandoned registration process');
+  randomSubmitError();
 }

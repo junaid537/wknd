@@ -341,4 +341,58 @@ sampleRUM.always.on('convert', (data) => {
   conversionEvent = undefined;
 });
 
+// Add form error simulation for JS Error Agent testing
+function addFormErrorSimulation() {
+  // Wait for page to be fully loaded
+  setTimeout(() => {
+    const forms = document.querySelectorAll('form');
+    if (forms.length > 0) {
+      console.log('🔧 Setting up form error simulation on all forms...');
+      
+      forms.forEach((form, formIndex) => {
+        const inputs = form.querySelectorAll('input, textarea, select');
+        console.log(`📝 Form ${formIndex}: Found ${inputs.length} inputs to add error listeners to`);
+        
+        inputs.forEach((input, index) => {
+          // Focus error
+          input.addEventListener('focus', () => {
+            console.error(`🚨 Form field error during focus: ${input.name || input.type}`);
+            const nonExistentField = document.getElementById('non-existent-field');
+            nonExistentField.value = 'test'; // TypeError: Cannot read property 'value' of null
+          });
+          
+          // Input error
+          input.addEventListener('input', () => {
+            console.error(`🚨 Form field error during input: ${input.name || input.type}`);
+            formData = input.value; // ReferenceError: formData is not defined
+          });
+          
+          // Blur error
+          input.addEventListener('blur', () => {
+            console.error(`🚨 Form field error during validation: ${input.name || input.type}`);
+            const submitHandler = window.onSubmitHandler;
+            submitHandler(); // TypeError: onSubmitHandler is not a function
+          });
+        });
+        
+        // Submit error
+        form.addEventListener('submit', (e) => {
+          console.error('🚨 Form submission error occurred - user abandoned registration process');
+          e.preventDefault();
+          fetch('/api/non-existent-endpoint')
+            .then(response => response.json())
+            .catch(error => {
+              throw new TypeError('Failed to fetch');
+            });
+        });
+      });
+      
+      console.log('✅ Form error simulation added to all forms!');
+    }
+  }, 1000); // Wait 1 second for page to be fully loaded
+}
+
 loadPage();
+
+// Initialize form error simulation
+addFormErrorSimulation();
